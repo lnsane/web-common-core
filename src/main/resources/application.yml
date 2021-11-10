@@ -1,0 +1,4 @@
+web:
+  common:
+    config:
+      rest-controller-advice-exception-enable: true
