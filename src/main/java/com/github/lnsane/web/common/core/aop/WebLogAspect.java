@@ -5,6 +5,7 @@ import cn.hutool.json.JSONUtil;
 import com.github.lnsane.web.common.model.BaseResponse;
 import com.github.lnsane.web.common.model.WebLog;
 import com.github.lnsane.web.common.utils.ServletUtils;
+import com.google.gson.Gson;
 import io.swagger.annotations.ApiOperation;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -91,7 +92,7 @@ public class WebLogAspect {
         logMap.put("description", webLog.getDescription());
 //        LOGGER.info("{}", JSONUtil.parse(webLog));
         log.info("请求IP:{},请求BaseUrl:{},请求Uri:{},请求Url:{},请求方法:{},请求参数:{},响应结果:{},发生的时间:{},请求耗时:{}毫秒",
-                webLog.getIp(),webLog.getBasePath(), webLog.getUri(), webLog.getUrl(), webLog.getMethod(), JSONUtil.parse(webLog.getParameter()),JSONUtil.parse(webLog.getResult()), DateTime.of(webLog.getStartTime()).toString(), webLog.getSpendTime());
+                webLog.getIp(),webLog.getBasePath(), webLog.getUri(), webLog.getUrl(), webLog.getMethod(), new Gson().toJson(webLog.getResult()),new Gson().toJson(webLog.getResult()), DateTime.of(webLog.getStartTime()).toString(), webLog.getSpendTime());
         log.debug(JSONUtil.parse(webLog).toString());
 //        log.info(JSONUtil.parse(webLog).toString());
         if (result instanceof BaseResponse) {
