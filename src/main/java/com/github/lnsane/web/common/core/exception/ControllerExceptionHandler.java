@@ -1,17 +1,24 @@
 package com.github.lnsane.web.common.core.exception;
 
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.github.lnsane.web.common.model.BaseResponse;
+import com.github.lnsane.web.common.utils.ValidationUtils;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.Assert;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.ZonedDateTime;
+import java.util.Map;
 
 /**
  * @author lnsane
@@ -32,10 +39,50 @@ public class ControllerExceptionHandler {
      */
     @ExceptionHandler(value = AbstractRuntimeException.class)
     public BaseResponse<?> abstractRuntimeException(AbstractRuntimeException e) {
-        BaseResponse<?> baseResponse = handleBaseException(e);
+        BaseResponse<JSONObject> baseResponse = handleBaseException(e);
         baseResponse.setMessage(e.getMessage());
         baseResponse.setStatus(e.getError().status());
         baseResponse.setTimestamp(e.timestamp());
+        baseResponse.setData(JSONUtil.createObj());
+        return baseResponse;
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public BaseResponse<?> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException e) {
+        BaseResponse<JSONObject> baseResponse = handleBaseException(e);
+        baseResponse.setStatus(BaseCodeEnums.BAD_REQUEST_EXCEPTION.status);
+        baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        baseResponse.setSpeedTime(0L);
+        baseResponse.setMessage("缺失请求主体");
+        baseResponse.setData(JSONUtil.createObj());
+        return baseResponse;
+    }
+
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public BaseResponse<?> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException e) {
+        BaseResponse<JSONObject> baseResponse = handleBaseException(e);
+        baseResponse.setMessage(String.format("请求字段缺失, 类型为 %s，名称为 %s", e.getParameterType(), e.getParameterName()));
+        baseResponse.setSpeedTime(0L);
+        baseResponse.setMessage("缺失请求主体");
+        baseResponse.setData(JSONUtil.createObj());
+        baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        return baseResponse;
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public BaseResponse<?> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException e) {
+        BaseResponse<Map<String, String>> baseResponse = handleBaseException(e);
+        baseResponse.setStatus(BaseCodeEnums.BAD_REQUEST_EXCEPTION.status);
+        baseResponse.setMessage("字段验证错误，请完善后重试！");
+        baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        baseResponse.setSpeedTime(0L);
+        Map<String, String> errMap =
+                ValidationUtils.mapWithFieldError(e.getBindingResult().getFieldErrors());
+        baseResponse.setData(errMap);
         return baseResponse;
     }
 
@@ -47,10 +94,11 @@ public class ControllerExceptionHandler {
      */
     @ExceptionHandler(value = Exception.class)
     public BaseResponse<?> globalException(Exception e) {
-        BaseResponse<?> baseResponse = handleBaseException(e);
-        baseResponse.setStatus(BaseCodeEnums.GLOBAL_EXCEPTION.status());
-        baseResponse.setMessage(BaseCodeEnums.GLOBAL_EXCEPTION.message());
+        BaseResponse<JSONObject> baseResponse = handleBaseException(e);
+        baseResponse.setStatus(BaseCodeEnums.GLOBAL_EXCEPTION.status);
+        baseResponse.setMessage(BaseCodeEnums.GLOBAL_EXCEPTION.message);
         baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        baseResponse.setData(JSONUtil.createObj());
         return baseResponse;
     }
 

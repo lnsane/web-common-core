@@ -1,2 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   com.github.lnsane.web.common.config.WebCommonConfigure
+
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.github.lnsane.web.common.core.aop.Refrsh

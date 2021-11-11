@@ -24,6 +24,16 @@ public class BaseResponse<T> {
     private Boolean isOk = Boolean.TRUE;
     private T data;
 
+    public Long getSpeedTime() {
+        return speedTime;
+    }
+
+    public void setSpeedTime(Long speedTime) {
+        this.speedTime = speedTime;
+    }
+
+    private Long speedTime;
+
     public BaseResponse() {
     }
 
@@ -91,6 +101,12 @@ public class BaseResponse<T> {
     public void setData(T data) {
         this.data = data;
     }
+
+
+    public static <T> BaseResponse<T> ok() {
+        return new BaseResponse<>(BaseCodeEnums.SUCCESS,BaseCodeEnums.SUCCESS.message(),null);
+    }
+
 
     /**
      * 成功 返回数据

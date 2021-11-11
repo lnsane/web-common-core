@@ -1,8 +1,10 @@
 package com.github.lnsane.web.common.config;
 
-import org.aopalliance.aop.Advice;
+import com.github.lnsane.web.common.core.aop.WebLogAspect;
+import com.github.lnsane.web.common.core.exception.ControllerExceptionHandler;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
@@ -10,6 +12,7 @@ import java.util.List;
  * @author lnsane
  */
 @ConfigurationProperties(prefix = "web.common.config")
+@Configuration
 public class WebCommonConfigure {
     private List<String> restControllerAdviceExceptionList;
 
@@ -29,5 +32,15 @@ public class WebCommonConfigure {
 
     public void setRestControllerAdviceExceptionList(List<String> restControllerAdviceExceptionList) {
         this.restControllerAdviceExceptionList = restControllerAdviceExceptionList;
+    }
+
+    @Bean
+    public WebLogAspect webLogAspect() {
+        return new WebLogAspect();
+    }
+
+    @Bean
+    public ControllerExceptionHandler controllerExceptionHandler() {
+        return new ControllerExceptionHandler();
     }
 }

@@ -2,3 +2,5 @@ web:
   common:
     config:
       rest-controller-advice-exception-enable: true
+      rest-controller-advice-exception-list:
+        - com.github.lnsane.web.common.controller
