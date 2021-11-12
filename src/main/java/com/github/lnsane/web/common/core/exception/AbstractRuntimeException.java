@@ -1,8 +1,5 @@
 package com.github.lnsane.web.common.core.exception;
 
-import java.time.Instant;
-import java.time.ZonedDateTime;
-
 /**
  * @author lnsane
  */
@@ -41,8 +38,8 @@ public abstract class AbstractRuntimeException extends RuntimeException {
      * 获取当前时间戳
      * @return 返回时间戳 毫秒
      */
-    public Instant timestamp() {
-        return ZonedDateTime.now().toInstant();
+    public Long timestamp() {
+        return System.currentTimeMillis();
     }
 
     public CustomizeError getError() {

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.Assert;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.ZonedDateTime;
 import java.util.Map;
 
 /**
@@ -52,9 +52,21 @@ public class ControllerExceptionHandler {
             HttpMessageNotReadableException e) {
         BaseResponse<JSONObject> baseResponse = handleBaseException(e);
         baseResponse.setStatus(BaseCodeEnums.BAD_REQUEST_EXCEPTION.status);
-        baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        baseResponse.setTimestamp(System.currentTimeMillis());
         baseResponse.setSpeedTime(0L);
         baseResponse.setMessage("缺失请求主体");
+        baseResponse.setData(JSONUtil.createObj());
+        return baseResponse;
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public BaseResponse<?> handleHttpRequestMethodNotSupportedException(
+            HttpRequestMethodNotSupportedException e) {
+        BaseResponse<JSONObject> baseResponse = handleBaseException(e);
+        baseResponse.setStatus(BaseCodeEnums.BAD_REQUEST_EXCEPTION.status);
+        baseResponse.setTimestamp(System.currentTimeMillis());
+        baseResponse.setSpeedTime(0L);
+        baseResponse.setMessage("接口不支持该方法请求");
         baseResponse.setData(JSONUtil.createObj());
         return baseResponse;
     }
@@ -68,7 +80,7 @@ public class ControllerExceptionHandler {
         baseResponse.setSpeedTime(0L);
         baseResponse.setMessage("缺失请求主体");
         baseResponse.setData(JSONUtil.createObj());
-        baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        baseResponse.setTimestamp(System.currentTimeMillis());
         return baseResponse;
     }
 
@@ -78,7 +90,7 @@ public class ControllerExceptionHandler {
         BaseResponse<Map<String, String>> baseResponse = handleBaseException(e);
         baseResponse.setStatus(BaseCodeEnums.BAD_REQUEST_EXCEPTION.status);
         baseResponse.setMessage("字段验证错误，请完善后重试！");
-        baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        baseResponse.setTimestamp(System.currentTimeMillis());
         baseResponse.setSpeedTime(0L);
         Map<String, String> errMap =
                 ValidationUtils.mapWithFieldError(e.getBindingResult().getFieldErrors());
@@ -97,7 +109,7 @@ public class ControllerExceptionHandler {
         BaseResponse<JSONObject> baseResponse = handleBaseException(e);
         baseResponse.setStatus(BaseCodeEnums.GLOBAL_EXCEPTION.status);
         baseResponse.setMessage(BaseCodeEnums.GLOBAL_EXCEPTION.message);
-        baseResponse.setTimestamp(ZonedDateTime.now().toInstant());
+        baseResponse.setTimestamp(System.currentTimeMillis());
         baseResponse.setData(JSONUtil.createObj());
         return baseResponse;
     }

@@ -1,6 +1,8 @@
 package com.github.lnsane.web.common.model;
 
-import com.fasterxml.jackson.annotation.*;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.github.lnsane.web.common.core.exception.BaseCodeEnums;
 import com.github.lnsane.web.common.core.exception.CustomizeError;
 
@@ -18,7 +20,7 @@ public class BaseResponse<T> {
     private String message;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String devMessage;
-    private Instant timestamp;
+    private Long timestamp;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String trackId;
     private Boolean isOk = Boolean.TRUE;
@@ -41,7 +43,7 @@ public class BaseResponse<T> {
         this.status = customizeError.status();
         this.message = message;
         this.data = data;
-        this.timestamp = this.getNowTime();
+        this.timestamp = System.currentTimeMillis();
     }
 
     public BaseResponse(CustomizeError customizeError, String message, T data, String trackId) {
@@ -49,7 +51,7 @@ public class BaseResponse<T> {
         this.message = message;
         this.data = data;
         this.trackId = trackId;
-        this.timestamp = this.getNowTime();
+        this.timestamp = System.currentTimeMillis();
     }
 
 
@@ -86,11 +88,11 @@ public class BaseResponse<T> {
         this.trackId = trackId;
     }
 
-    public Instant getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Instant timestamp) {
+    public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -103,8 +105,8 @@ public class BaseResponse<T> {
     }
 
 
-    public static <T> BaseResponse<T> ok() {
-        return new BaseResponse<>(BaseCodeEnums.SUCCESS,BaseCodeEnums.SUCCESS.message(),null);
+    public static <T> BaseResponse<JSONObject> ok() {
+        return new BaseResponse<>(BaseCodeEnums.SUCCESS,BaseCodeEnums.SUCCESS.message(), JSONUtil.createObj());
     }
 
 
@@ -131,8 +133,8 @@ public class BaseResponse<T> {
         return new BaseResponse<>(BaseCodeEnums.SUCCESS, message, data);
     }
 
-    public static <T> BaseResponse<T> ok(String message) {
-        return new BaseResponse<>(BaseCodeEnums.SUCCESS, message, null);
+    public static <T> BaseResponse<JSONObject> ok(String message) {
+        return new BaseResponse<>(BaseCodeEnums.SUCCESS, message,  JSONUtil.createObj());
     }
 //
 //    public static <T> BaseResponse<T> fail(T data) {

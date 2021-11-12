@@ -115,13 +115,16 @@ public class TimeIntervalAspect {
         try {
             file = ResourceUtils.getFile("classpath:application.yml");
         } catch (FileNotFoundException e) {
-            try {
-                file = ResourceUtils.getFile("classpath:application.yml");
-            } catch (FileNotFoundException ex) {
-                ex.printStackTrace();
-                System.exit(-1);
-            }
-            e.printStackTrace();
+//            try {
+//                file = ResourceUtils.getFile("classpath:application.yml");
+//            } catch (FileNotFoundException ex) {
+//                ex.printStackTrace();
+//                System.exit(-1);
+//            }
+//            e.printStackTrace();
+        }
+        if (ObjectUtil.isNull(file)) {
+            return new ArrayList<>();
         }
 
         LinkedHashMap<String, LinkedHashMap> hashMap = (LinkedHashMap<String, LinkedHashMap>) andRegisterModules.readValue(file, Object.class);
