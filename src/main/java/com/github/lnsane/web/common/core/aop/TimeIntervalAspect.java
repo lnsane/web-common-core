@@ -96,8 +96,8 @@ public class TimeIntervalAspect {
 
     public static String resolveList(List<String> list) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("execution(public * ");
         for (int i = 0; i < list.size(); i++) {
+            stringBuilder.append("execution(public * ");
             String key = list.get(i);
             stringBuilder.append(key);
             stringBuilder.append(".*.*(..))");
