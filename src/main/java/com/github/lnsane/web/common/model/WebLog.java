@@ -9,6 +9,20 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class WebLog {
+
+    /**
+     * 追踪Id
+     */
+    private String trackId;
+    /**
+     * 请求类名
+     */
+    private String clazzName;
+
+    /**
+     * 请求类方法名
+     */
+    private String clazzMethodName;
     /**
      * 操作描述
      */

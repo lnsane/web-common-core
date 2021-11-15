@@ -3,8 +3,13 @@ package com.github.lnsane.web.common.core.aop;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.json.JSONUtil;
+import com.github.lnsane.web.common.content.PreRequestHandle;
+import com.github.lnsane.web.common.content.RequestContext;
 import com.github.lnsane.web.common.model.BaseResponse;
+import com.github.lnsane.web.common.model.ExceptionFlag;
+import com.github.lnsane.web.common.model.RequestSupport;
 import com.github.lnsane.web.common.model.WebLog;
 import com.github.lnsane.web.common.utils.ServletUtils;
 import com.google.gson.GsonBuilder;
@@ -12,7 +17,10 @@ import io.swagger.annotations.ApiOperation;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
-import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,19 +49,60 @@ import java.util.Map;
 public class WebLogAspect {
     private static final Logger log = LoggerFactory.getLogger(WebLogAspect.class);
 
-    @Pointcut
-    public void webLog() {
+    @Pointcut("@within(org.springframework.web.bind.annotation.RestController)")
+    public void restController() {
     }
 
-    @Before("webLog()")
-    public void doBefore(JoinPoint joinPoint) throws Throwable {
+    @Pointcut("@within(org.springframework.stereotype.Controller)")
+    public void controller() {
     }
 
-    @AfterReturning(value = "webLog()", returning = "ret")
-    public void doAfterReturning(Object ret) throws Throwable {
+    @AfterThrowing(throwing = "e", pointcut = "controller() || restController()")
+    public void exceptionDeal(JoinPoint joinPoint, RuntimeException e) {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = attributes.getRequest();
+        Signature signature = joinPoint.getSignature();
+        //记录请求信息(通过Logstash传入Elasticsearch)
+        WebLog webLog = new WebLog();
+        MethodSignature methodSignature = (MethodSignature) signature;
+        Method method = methodSignature.getMethod();
+        if (method.isAnnotationPresent(ApiOperation.class)) {
+            ApiOperation log = method.getAnnotation(ApiOperation.class);
+            webLog.setDescription(log.value());
+        }
+        String urlStr = request.getRequestURL().toString();
+        webLog.setBasePath(urlStr);
+        webLog.setClazzMethodName(methodSignature.getMethod().getName());
+        webLog.setClazzName(methodSignature.getMethod().getDeclaringClass().getName());
+        webLog.setIp(request.getRemoteUser());
+        webLog.setMethod(request.getMethod());
+        webLog.setParameter(resolveRequestBody(method, joinPoint.getArgs()));
+        RequestSupport requestSupport = RequestContext.get();
+        if (ObjectUtil.isNotNull(requestSupport)) {
+            webLog.setTrackId(requestSupport.getTrackId());
+        }
+        ExceptionFlag exceptionFlag = PreRequestHandle.get();
+        webLog.setIp(ServletUtils.getClientIP(request));
+        webLog.setUri(request.getRequestURI());
+        webLog.setUrl(this.resolveRequestParam(urlStr, method, joinPoint.getArgs()));
+        log.info("请求追踪ID: {}-{}\n" + "请求全类名: {}\n" + "请求类方法名: {}\n" + "请求IP: {}\n" +
+                        "请求BaseUrl: {} \n请求Uri: {}\n请求Url: {}\n请求方法: {}\n请求参数: {}\n发生的时间: {}\n请求耗时: {}毫秒",
+                webLog.getTrackId(),
+                webLog.getTrackId() != null ? requestSupport.getTrackIdIndex() : null,
+                webLog.getClazzName(),
+                webLog.getClazzMethodName(),
+                webLog.getIp(),
+                webLog.getBasePath(),
+                webLog.getUri(),
+                webLog.getUrl(),
+                webLog.getMethod(),
+                new GsonBuilder().serializeNulls().create().toJson(webLog.getParameter()),
+                DateUtil.format(DateTime.of(exceptionFlag.getStartTime()), DatePattern.NORM_DATETIME_MS_FORMATTER),
+                System.currentTimeMillis() - exceptionFlag.getStartTime());
     }
 
-    @Around("webLog()")
+
+    @Around("controller() || restController()")
     public Object doAround(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         //获取当前请求对象
@@ -63,7 +112,7 @@ public class WebLogAspect {
         WebLog webLog = new WebLog();
         Object result = joinPoint.proceed();
         Signature signature = joinPoint.getSignature();
-        MethodSignature methodSignature = (MethodSignature) signature;
+        MethodSignature methodSignature =  (MethodSignature) signature;
         Method method = methodSignature.getMethod();
         if (method.isAnnotationPresent(ApiOperation.class)) {
             ApiOperation log = method.getAnnotation(ApiOperation.class);
@@ -72,6 +121,8 @@ public class WebLogAspect {
         long endTime = System.currentTimeMillis();
         String urlStr = request.getRequestURL().toString();
         webLog.setBasePath(urlStr);
+        webLog.setClazzMethodName(methodSignature.getMethod().getName());
+        webLog.setClazzName(methodSignature.getMethod().getDeclaringClass().getName());
         webLog.setIp(request.getRemoteUser());
         webLog.setMethod(request.getMethod());
         webLog.setParameter(resolveRequestBody(method, joinPoint.getArgs()));
@@ -80,6 +131,10 @@ public class WebLogAspect {
         if (result instanceof BaseResponse) {
             commonResult = (BaseResponse<?>) result;
             commonResult.setSpeedTime(endTime - startTime);
+        }
+        RequestSupport requestSupport = RequestContext.get();
+        if (ObjectUtil.isNotNull(requestSupport)) {
+            webLog.setTrackId(requestSupport.getTrackId());
         }
         webLog.setSpendTime((int) (endTime - startTime));
         webLog.setStartTime(startTime);
@@ -93,7 +148,12 @@ public class WebLogAspect {
         logMap.put("spendTime", webLog.getSpendTime());
         logMap.put("description", webLog.getDescription());
 //        LOGGER.info("{}", JSONUtil.parse(webLog));
-        log.info("请求IP:{},请求BaseUrl:{},请求Uri:{},请求Url:{},请求方法:{},请求参数:{},响应结果:{},发生的时间:{},请求耗时:{}毫秒",
+        log.info("请求追踪ID: {}-{}\n" + "请求全类名: {}\n" + "请求类方法名: {}\n" + "请求IP: {}\n" +
+                        "请求BaseUrl: {} \n请求Uri: {}\n请求Url: {}\n请求方法: {}\n请求参数: {}\n响应结果: {}\n发生的时间: {}\n请求耗时: {}毫秒",
+                webLog.getTrackId(),
+                webLog.getTrackId() != null ? requestSupport.getTrackIdIndex() : null,
+                webLog.getClazzName(),
+                webLog.getClazzMethodName(),
                 webLog.getIp(),
                 webLog.getBasePath(),
                 webLog.getUri(),
@@ -141,7 +201,7 @@ public class WebLogAspect {
         for (int i = 0; i < parameters.length; i++) {
             RequestParam requestParam = parameters[i].getAnnotation(RequestParam.class);
             if (requestParam != null) {
-                if (i == 0 ) {
+                if (i == 0) {
                     sb.append("?");
                 }
                 String key = parameters[i].getName();

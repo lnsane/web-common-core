@@ -7,6 +7,7 @@ package com.github.lnsane.web.common.core.exception;
 public enum BaseCodeEnums implements CustomizeError {
 
     SUCCESS("0", "成功"),
+    FEIGN_REQUEST_EXCEPTION("300000", "远程调用异常"),
     BAD_REQUEST_EXCEPTION("400000", "请求异常"),
     GLOBAL_EXCEPTION("999999", "全局异常");
 

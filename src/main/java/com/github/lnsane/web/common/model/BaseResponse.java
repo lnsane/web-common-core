@@ -23,7 +23,7 @@ public class BaseResponse<T> {
     private Long timestamp;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String trackId;
-    private Boolean isOk = Boolean.TRUE;
+    private Boolean ok;
     private T data;
 
     public Long getSpeedTime() {
@@ -44,6 +44,7 @@ public class BaseResponse<T> {
         this.message = message;
         this.data = data;
         this.timestamp = System.currentTimeMillis();
+        this.ok = Boolean.TRUE;
     }
 
     public BaseResponse(CustomizeError customizeError, String message, T data, String trackId) {
@@ -155,11 +156,11 @@ public class BaseResponse<T> {
     }
 
     public Boolean getOk() {
-        return isOk;
+        return ok;
     }
 
     public void setOk(Boolean ok) {
-        isOk = ok;
+        this.ok = ok;
     }
 
 }

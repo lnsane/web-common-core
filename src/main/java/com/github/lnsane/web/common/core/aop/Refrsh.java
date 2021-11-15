@@ -11,8 +11,7 @@ public class Refrsh implements EnvironmentPostProcessor {
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        Class<?> mainApplicationClass = application.getMainApplicationClass();
-
-        TimeIntervalAspect.setServletContext(mainApplicationClass);
+//        Class<?> mainApplicationClass = application.getMainApplicationClass();
+//        TimeIntervalAspect.setServletContext(mainApplicationClass);
     }
 }
